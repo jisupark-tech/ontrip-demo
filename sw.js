@@ -1,28 +1,53 @@
 // Offline shell for on-trip use: visitors routinely lose signal in subways and
 // alleys, and the guide is least useful exactly when it cannot load.
-// Strategy: cache-first for the app shell, network-first for data.
-const CACHE = 'ontrip-v1'
+// Strategy: cache-first for the app shell, refreshed in the background.
+
+// Stamped per build by tools/stamp-sw.mjs. A fixed name would make the very
+// first visit permanent: activate() only drops caches whose name differs, so
+// without a new name every redeploy keeps serving the shell it cached first.
+const CACHE = 'ontrip-3b00d58e485a'
+
+// Hashed asset filenames, injected at build time. Precaching these is not an
+// optimisation: on a first visit the worker activates *after* the page has
+// already fetched them, so it never sees those requests and would otherwise
+// hold a shell whose scripts are missing — a blank page the moment signal drops.
+const ASSETS = ["./assets/index-B3txi2VW.js","./assets/index-Ck-xADQe.css"]
+
+const scoped = (p) => new URL(p, self.registration.scope).pathname
+const INDEX = scoped('./index.html')
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(['/', '/index.html'])))
-  self.skipWaiting()
+  const shell = ['./', './index.html', ...ASSETS].map(scoped)
+  // Added one at a time: with addAll, a single missing entry rejects the whole
+  // install and the visitor ends up with no offline shell at all.
+  e.waitUntil(
+    caches
+      .open(CACHE)
+      .then((c) => Promise.all(shell.map((p) => c.add(p).catch(() => {}))))
+      .then(() => self.skipWaiting()),
+  )
 })
 
 self.addEventListener('activate', (e) => {
   e.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))),
-    ),
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))),
+      )
+      .then(() => self.clients.claim()),
   )
-  self.clients.claim()
 })
 
 self.addEventListener('fetch', (e) => {
   const { request } = e
-  if (request.method !== 'GET') return
+  if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) {
+    return
+  }
+
   e.respondWith(
     caches.match(request).then((hit) => {
-      const fetched = fetch(request)
+      const fresh = fetch(request)
         .then((res) => {
           if (res.ok) {
             const copy = res.clone()
@@ -30,9 +55,21 @@ self.addEventListener('fetch', (e) => {
           }
           return res
         })
-        .catch(() => hit)
-      // Serve cache immediately when we have it; refresh in the background.
-      return hit || fetched
+        .catch(() => null)
+
+      if (hit) {
+        // Serve immediately, refresh in the background.
+        fresh.catch(() => {})
+        return hit
+      }
+
+      return fresh.then((res) => {
+        if (res) return res
+        // Offline and never seen: a navigation still deserves the app shell.
+        // Anything else fails honestly rather than as an empty 200.
+        if (request.mode === 'navigate') return caches.match(INDEX)
+        return Response.error()
+      })
     }),
   )
 })
