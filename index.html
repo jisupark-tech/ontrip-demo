@@ -3,12 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#F7F9F8" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#0E1513" media="(prefers-color-scheme: dark)" />
-    <link rel="manifest" href="/ontrip-demo/manifest.webmanifest" />
+    <meta name="theme-color" content="#FFFFFF" />
+    <!-- All relative: the app is served from a sub-path, and an origin-root
+         href 404s there, which is how the manifest and the service worker both
+         came to be silently absent in production. -->
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
     <title>ontrip — Seoul, right now</title>
-    <script type="module" crossorigin src="/ontrip-demo/assets/index-B3txi2VW.js"></script>
-    <link rel="stylesheet" crossorigin href="/ontrip-demo/assets/index-Ck-xADQe.css">
+    <script type="module" crossorigin src="/ontrip-demo/assets/index-vuOy7mYC.js"></script>
+    <link rel="stylesheet" crossorigin href="/ontrip-demo/assets/index-CULSO5Z0.css">
   </head>
   <body>
     <div id="root"></div>
