@@ -5,13 +5,13 @@
 // Stamped per build by tools/stamp-sw.mjs. A fixed name would make the very
 // first visit permanent: activate() only drops caches whose name differs, so
 // without a new name every redeploy keeps serving the shell it cached first.
-const CACHE = 'ontrip-376312c22615'
+const CACHE = 'ontrip-dc45c90167d8'
 
 // Hashed asset filenames, injected at build time. Precaching these is not an
 // optimisation: on a first visit the worker activates *after* the page has
 // already fetched them, so it never sees those requests and would otherwise
 // hold a shell whose scripts are missing — a blank page the moment signal drops.
-const ASSETS = ["./assets/index-B8NzZsu0.css","./assets/index-CgPZPCRZ.js"]
+const ASSETS = ["./assets/index-B8NzZsu0.css","./assets/index-BJ-eaXvP.js"]
 
 const scoped = (p) => new URL(p, self.registration.scope).pathname
 const INDEX = scoped('./index.html')
